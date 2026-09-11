@@ -1,5 +1,7 @@
 node_modules
 .next
+dist
+src-tauri/target
 .env
 .env.local
 coverage

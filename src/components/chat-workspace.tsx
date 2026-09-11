@@ -25,13 +25,11 @@ export function ChatWorkspace() {
         .catch((e) => toast.error(String(e)));
     } else setMessages([]);
   }, [active, models]);
-  useEffect(
-    () =>
-      bottom.current?.scrollIntoView({
-        behavior: streaming ? "auto" : "smooth",
-      }),
-    [messages, streaming],
-  );
+  useEffect(() => {
+    bottom.current?.scrollIntoView({
+      behavior: streaming ? "auto" : "smooth",
+    });
+  }, [messages, streaming]);
   async function send() {
     const content = input.trim();
     if (!content || streaming) return;

@@ -42,6 +42,10 @@ fn safe_ip(ip: IpAddr) -> bool {
     }
 }
 
+fn chat_completions_endpoint(base_url: &str) -> String {
+    format!("{}/chat/completions", base_url.trim_end_matches('/'))
+}
+
 async fn validate_destination(base_url: &str) -> Result<Url, String> {
     let url = Url::parse(base_url).map_err(|_| "Provider URL is invalid")?;
     if url.scheme() != "https" {
@@ -139,10 +143,7 @@ async fn run_generation(
             .map_err(|e| e.to_string())?;
         (c.0, c.1, c.2, c.3, c.4, c.5, c.6, h)
     };
-    let url = validate_destination(&base_url)
-        .await?
-        .join("chat/completions")
-        .map_err(|_| "Unable to create provider request URL")?;
+    let url = validate_destination(&chat_completions_endpoint(&base_url)).await?;
     let key = credentials::load(&provider_id)?;
     let mut messages = Vec::new();
     if let Some(s) = input
@@ -290,7 +291,19 @@ async fn run_generation(
 
 #[cfg(test)]
 mod tests {
-    use super::safe_ip;
+    use super::{chat_completions_endpoint, safe_ip};
+
+    #[test]
+    fn appends_chat_completions_without_replacing_the_version_path() {
+        assert_eq!(
+            chat_completions_endpoint("https://nano-gpt.com/api/v1"),
+            "https://nano-gpt.com/api/v1/chat/completions"
+        );
+        assert_eq!(
+            chat_completions_endpoint("https://api.openai.com/v1/"),
+            "https://api.openai.com/v1/chat/completions"
+        );
+    }
     #[test]
     fn blocks_non_public_addresses() {
         for value in [

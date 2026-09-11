@@ -1,6 +1,7 @@
 use crate::{credentials, database::Database, models::*};
 use chrono::Utc;
 use rusqlite::{OptionalExtension, params};
+use std::{path::PathBuf, time::Duration};
 use tauri::State;
 use uuid::Uuid;
 
@@ -236,6 +237,39 @@ pub fn list_messages(
 pub fn usage_summary(database: State<'_, Database>) -> Result<UsageSummary, String> {
     let db = database.0.lock().map_err(|_| "Database lock failed")?;
     db.query_row("SELECT COUNT(*),COALESCE(SUM(total_tokens),0),COALESCE(SUM(estimated_total_cost),0),COALESCE(AVG(ttft_ms),0) FROM usage_records",[],|r|Ok(UsageSummary{total_requests:r.get(0)?,total_tokens:r.get(1)?,estimated_spend:r.get(2)?,average_ttft_ms:r.get(3)?})).map_err(db_error)
+}
+
+#[tauri::command]
+pub fn export_data(destination: String, database: State<'_, Database>) -> Result<(), String> {
+    let destination = PathBuf::from(destination);
+    if destination.extension().and_then(|value| value.to_str()) != Some("sqlite3") {
+        return Err("Export filename must end in .sqlite3".into());
+    }
+    let db = database.0.lock().map_err(|_| "Database lock failed")?;
+    db.execute_batch("PRAGMA wal_checkpoint(FULL)")
+        .map_err(db_error)?;
+    std::fs::copy(&database.1, destination)
+        .map_err(|error| format!("Unable to export data: {error}"))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn import_data(source: String, database: State<'_, Database>) -> Result<(), String> {
+    let source =
+        rusqlite::Connection::open_with_flags(source, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .map_err(|_| "Unable to open the selected backup")?;
+    let version: i64 = source
+        .query_row("PRAGMA user_version", [], |row| row.get(0))
+        .map_err(db_error)?;
+    if version != 1 {
+        return Err("The selected file is not a compatible Relay backup".into());
+    }
+    let mut destination = database.0.lock().map_err(|_| "Database lock failed")?;
+    let backup = rusqlite::backup::Backup::new(&source, &mut destination).map_err(db_error)?;
+    backup
+        .run_to_completion(16, Duration::from_millis(20), None)
+        .map_err(db_error)?;
+    Ok(())
 }
 
 #[cfg(test)]

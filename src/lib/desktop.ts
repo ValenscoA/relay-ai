@@ -113,6 +113,9 @@ export const api = {
   }) => invoke<void>("start_generation", { input }),
   cancelGeneration: (requestId: string) =>
     invoke<void>("cancel_generation", { requestId }),
+  exportData: (destination: string) =>
+    invoke<void>("export_data", { destination }),
+  importData: (source: string) => invoke<void>("import_data", { source }),
   onGeneration: (
     requestId: string,
     handler: (event: GenerationEvent) => void,

@@ -29,6 +29,8 @@ pub fn run() {
             commands::delete_conversation,
             commands::list_messages,
             commands::usage_summary,
+            commands::export_data,
+            commands::import_data,
             network::start_generation,
             network::cancel_generation
         ])

@@ -2,7 +2,7 @@ use rusqlite::Connection;
 use std::{fs, path::PathBuf, sync::Mutex};
 use tauri::{AppHandle, Manager};
 
-pub struct Database(pub Mutex<Connection>);
+pub struct Database(pub Mutex<Connection>, pub PathBuf);
 
 const MIGRATION: &str = r#"
 PRAGMA foreign_keys = ON;
@@ -54,7 +54,7 @@ pub fn open(app: &AppHandle) -> Result<Database, String> {
     connection
         .execute_batch(MIGRATION)
         .map_err(|e| format!("Unable to migrate database: {e}"))?;
-    Ok(Database(Mutex::new(connection)))
+    Ok(Database(Mutex::new(connection), dir.join("relay.sqlite3")))
 }
 
 #[cfg(test)]

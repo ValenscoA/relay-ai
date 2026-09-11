@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { api, type GenerationEvent, type UsageSummary } from "@/lib/desktop";
 import { useWorkspace } from "./workspace-context";
 import {
@@ -274,6 +275,27 @@ export function SettingsView() {
       toast.error(String(error));
     }
   }
+  async function exportData() {
+    const path = await save({
+      defaultPath: "relay-backup.sqlite3",
+      filters: [{ name: "Relay backup", extensions: ["sqlite3"] }],
+    });
+    if (path) {
+      await api.exportData(path);
+      toast.success("Local data exported");
+    }
+  }
+  async function importData() {
+    const path = await open({
+      multiple: false,
+      filters: [{ name: "Relay backup", extensions: ["sqlite3"] }],
+    });
+    if (typeof path === "string") {
+      await api.importData(path);
+      await refresh();
+      toast.success("Local data imported; re-enter provider API keys");
+    }
+  }
   return (
     <Shell title="Settings" eyebrow="Workspace">
       <div className="mx-auto max-w-4xl space-y-5 p-6">
@@ -399,6 +421,27 @@ export function SettingsView() {
           </form>
           <div className="border-t border-[var(--border)] px-5 py-3 text-sm text-[var(--muted)]">
             {models.length} configured model{models.length === 1 ? "" : "s"}
+          </div>
+        </section>
+        <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-5">
+          <h2 className="font-medium">Data</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Backups contain conversations and configuration, but never
+            operating-system credentials.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => void exportData()}
+              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm"
+            >
+              Export backup
+            </button>
+            <button
+              onClick={() => void importData()}
+              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm"
+            >
+              Import backup
+            </button>
           </div>
         </section>
       </div>

@@ -1,7 +1,17 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-const baseDirectory = path.dirname(fileURLToPath(import.meta.url));
-const compat = new FlatCompat({ baseDirectory });
-const config = [...compat.extends("next/core-web-vitals", "next/typescript"), { ignores: [".next/**", "dist/**", "drizzle/**", "next-env.d.ts", "src-tauri/target/**"] }];
-export default config;
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  { ignores: [".next/**", "dist/**", "src-tauri/target/**", "src-tauri/gen/**"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["src/**/*.{ts,tsx}", "vite.config.ts"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { ...globals.browser, ...globals.node },
+    },
+    rules: { "@typescript-eslint/no-explicit-any": "error" },
+  },
+);

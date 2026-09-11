@@ -1,3 +1,0 @@
-import { describe, expect, it } from "vitest";
-import { validateProviderUrl } from "./security";
-describe("provider URL validation",()=>{it("accepts allowlisted HTTPS endpoints",()=>expect(validateProviderUrl("https://api.openai.com/v1/","api.openai.com")).toBe("https://api.openai.com/v1"));it.each(["http://api.openai.com/v1","https://localhost/v1","https://127.0.0.1/v1","https://192.168.1.2/v1"])("rejects unsafe endpoint %s",(url)=>expect(()=>validateProviderUrl(url,"api.openai.com")).toThrow());it("rejects hosts outside the allowlist",()=>expect(()=>validateProviderUrl("https://example.com/v1","api.openai.com")).toThrow())});

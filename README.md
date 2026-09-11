@@ -1,63 +1,81 @@
 # Relay
 
-Relay is a dark-first, multi-provider AI chat workspace built as a portfolio-grade full-stack application. It connects to OpenAI-compatible APIs with user-supplied credentials, streams responses, compares models, and records latency, token, and estimated-cost telemetry.
+Relay is a local-first desktop workspace for chatting with and comparing OpenAI-compatible language models. It uses a React/Vite renderer inside Tauri, a Rust backend for provider traffic, SQLite for durable history and metrics, and the operating system credential vault for API keys.
 
-## Features
+## Highlights
 
-- Real upstream SSE streaming with cancellation support
-- Provider adapter boundary designed for additional native providers
-- Conversation, message, generation, and usage persistence model
-- AES-256-GCM encrypted API credentials
-- Markdown, GFM, sanitized links, and highlighted code
-- Independent model comparison surface and usage analytics
-- Responsive developer-tool interface with accessible focus states
-- URL allowlisting and private-network SSRF defenses
+- Real SSE streaming from the Rust backend, with Stop Generation support
+- Concurrent side-by-side model comparison with isolated failures
+- Local conversations, messages, generation attempts, and usage telemetry
+- Configurable per-million-token pricing and estimated cost reporting
+- API keys stored in Windows Credential Manager—not SQLite or browser storage
+- Import/export through native file dialogs; backup files deliberately exclude credentials
+- Restored window size/position and desktop shortcuts
+- HTTPS-only provider endpoints, redirect denial, DNS resolution checks, and private-address blocking
+- Sanitized Markdown, GFM, and syntax-highlighted code
 
 ## Screenshots
 
-Add desktop chat, comparison, usage, and mobile screenshots here before publishing the repository.
+Add screenshots of Chat, Compare, Usage, and Settings before publishing the portfolio listing.
 
-## Architecture
+## Tech stack
 
-The App Router UI calls narrow route handlers. Handlers validate inputs with Zod, resolve encrypted provider configuration from PostgreSQL, construct an adapter, and proxy the actual provider stream. Database tables separate durable chat state from individual generation attempts and their telemetry. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Tauri 2 and Rust
+- React 19, TypeScript strict mode, Vite 7, Tailwind CSS 4
+- SQLite via `rusqlite`
+- Windows Credential Manager via `keyring`
+- `reqwest`/Rustls for provider connections
 
-## Local setup
+## Development setup
 
-```bash
-cp .env.example .env
-docker compose up -d postgres
+Requirements on Windows:
+
+- Node.js 22+
+- Rust stable (`rustup`)
+- Visual Studio 2022 Build Tools with the Desktop development with C++ workload
+- Microsoft Edge WebView2 runtime
+
+```powershell
 npm install
-npm run db:migrate
-npm run dev
+npm run desktop
 ```
 
-Generate `APP_ENCRYPTION_KEY` with `openssl rand -base64 32`. Add every approved provider hostname to `ALLOWED_PROVIDER_HOSTS`; custom URLs are denied unless listed.
+The browser-only renderer remains useful for visual work with `npm run dev`, but native storage and generation require `npm run desktop`.
 
 ## Commands
 
-- `npm run dev` — development server
-- `npm run test` — focused business/security tests
-- `npm run lint` — ESLint
-- `npm run typecheck` — strict TypeScript
-- `npm run build` — production build
-- `npm run db:generate` / `npm run db:migrate` — schema workflow
+```text
+npm run dev            Vite renderer
+npm run build          Type-check and build the renderer
+npm run desktop        Run the Tauri application
+npm run desktop:build  Create a production Windows bundle
+npm run lint           Lint TypeScript and React
+npm run typecheck      TypeScript strict-mode check
+npm test               Rust backend tests
+```
 
-## Environment
+## Desktop shortcuts
 
-| Variable | Purpose |
-| --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `APP_ENCRYPTION_KEY` | Base64-encoded 32-byte credential encryption key |
-| `ALLOWED_PROVIDER_HOSTS` | Comma-separated custom endpoint hostname allowlist |
+- `Ctrl+N`: new conversation
+- `Ctrl+B`: collapse or expand the sidebar
+- `Ctrl+,`: open Settings
 
-## Security decisions
+## Provider setup
 
-Keys stay server-side and are authenticated-encrypted at rest. Provider URLs require HTTPS, deny common loopback/private ranges, reject redirects, and must match an explicit hostname allowlist. Inputs have schema and size limits. Rendered Markdown is sanitized and external links use isolated browsing contexts. Errors do not include credentials.
+Open Settings, add an HTTPS OpenAI-compatible base URL and API key, then add one or more model identifiers and their optional input/output prices. The application stores only a masked key marker in SQLite. Imported backups require API keys to be entered again.
 
-## Project structure
+## Data locations
 
-`src/app` contains routes, `src/components` presentation, `src/providers` adapters, `src/db` relational schema/access, and `src/lib` validation, security, and domain utilities. `drizzle` contains auditable SQL migrations and `docs` contains the architectural rationale.
+Tauri stores `relay.sqlite3` in the platform application-data directory for `dev.valensco.relay`. Secrets live separately in the operating system credential vault. Native backups are ordinary SQLite snapshots and never include vault credentials.
 
-## Limitations and planned work
+## Security
 
-This local-first release intentionally has one seeded/local user and OpenAI-compatible providers only. Authentication, native Anthropic/Google adapters, file uploads, conversation branching, tool calling/MCP, RAG, search, failover, routing, and prompt presets fit the existing boundaries but are not silently mocked.
+Provider requests never pass through the WebView. Rust resolves provider hostnames before connecting and rejects loopback, private, link-local, broadcast, and unspecified addresses. Only HTTPS is accepted, redirects are disabled, authorization headers cannot be overridden by custom headers, rendered Markdown is sanitized, and errors do not contain API keys.
+
+DNS rebinding protection is best-effort because resolution and connection are separate operations in the current `reqwest` integration. A hardened enterprise release should pin the validated address for the request.
+
+## Architecture and limitations
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the command/event flow, schema rationale, failure model, and interview notes.
+
+Relay currently supports OpenAI-compatible chat-completions streaming on Windows. Native Anthropic/Google adapters, authentication and sync, attachments, branching, tools/MCP, RAG, web search, routing, and automatic failover remain future work rather than mocked features.

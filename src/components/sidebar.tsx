@@ -8,13 +8,8 @@ import {
   Settings,
   Sparkles,
 } from "./icons";
+import { useWorkspace } from "./workspace-context";
 
-const chats = [
-  { title: "Streaming architecture review", age: "2m" },
-  { title: "Refactor authentication flow", age: "1h" },
-  { title: "Postgres index strategy", age: "Yesterday" },
-  { title: "Docker compose debugging", age: "Tue" },
-];
 export function Sidebar({
   collapsed,
   onToggle,
@@ -26,6 +21,7 @@ export function Sidebar({
   view: string;
   onView: (v: string) => void;
 }) {
+  const { conversations, active, setActive, newChat } = useWorkspace();
   return (
     <aside
       className={`${collapsed ? "w-[68px]" : "w-[276px]"} fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--border)] bg-[var(--panel)] transition-[width] duration-200 md:flex md:flex-col`}
@@ -47,7 +43,10 @@ export function Sidebar({
       </div>
       <div className="p-3">
         <button
-          onClick={() => onView("chat")}
+          onClick={() => {
+            onView("chat");
+            void newChat();
+          }}
           className="focus-ring flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[var(--accent)] px-3 text-sm font-semibold text-[#15170f] hover:bg-[#d2f58a]"
         >
           <Plus size={17} />
@@ -55,12 +54,14 @@ export function Sidebar({
         </button>
       </div>
       <nav className="space-y-1 px-3">
-        {([
-          ["chat", MessageSquare, "Chat"],
-          ["compare", Sparkles, "Compare"],
-          ["usage", BarChart3, "Usage"],
-          ["settings", Settings, "Settings"],
-        ] as const).map(([id, Icon, label]) => (
+        {(
+          [
+            ["chat", MessageSquare, "Chat"],
+            ["compare", Sparkles, "Compare"],
+            ["usage", BarChart3, "Usage"],
+            ["settings", Settings, "Settings"],
+          ] as const
+        ).map(([id, Icon, label]) => (
           <button
             key={String(id)}
             onClick={() => onView(String(id))}
@@ -85,13 +86,19 @@ export function Sidebar({
             Recent
           </div>
           <div className="mt-2 flex-1 overflow-y-auto px-2">
-            {chats.map((c, i) => (
+            {conversations.map((c) => (
               <button
-                key={c.title}
-                className={`group mb-1 w-full rounded-md px-3 py-2.5 text-left hover:bg-white/[.04] ${i === 0 ? "bg-white/[.05]" : ""}`}
+                key={c.id}
+                onClick={() => {
+                  setActive(c);
+                  onView("chat");
+                }}
+                className={`group mb-1 w-full rounded-md px-3 py-2.5 text-left hover:bg-white/[.04] ${active?.id === c.id ? "bg-white/[.05]" : ""}`}
               >
                 <div className="truncate text-sm text-[#d5d8df]">{c.title}</div>
-                <div className="mt-1 text-xs text-[#666c78]">{c.age}</div>
+                <div className="mt-1 text-xs text-[#666c78]">
+                  {new Date(c.updatedAt).toLocaleDateString()}
+                </div>
               </button>
             ))}
           </div>

@@ -16,7 +16,11 @@ Relay is a local-first desktop workspace for chatting with and comparing OpenAI-
 
 ## Screenshots
 
-Add screenshots of Chat, Compare, Usage, and Settings before publishing the portfolio listing.
+### Chat workspace
+
+![Relay chat workspace with a NanoGPT model](docs/screenshots/chat-workspace.png)
+
+Relay keeps conversation history locally while streaming responses through the native Rust backend.
 
 ## Tech stack
 

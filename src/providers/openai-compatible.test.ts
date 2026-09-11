@@ -1,0 +1,4 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { OpenAICompatibleProvider } from "./openai-compatible";
+afterEach(()=>vi.restoreAllMocks());
+describe("OpenAI-compatible adapter",()=>{it("transforms chat parameters without leaking configuration",async()=>{const fetchMock=vi.spyOn(globalThis,"fetch").mockResolvedValue(new Response("ok"));const provider=new OpenAICompatibleProvider("https://api.openai.com/v1","secret",{});await provider.streamChat({model:"model-a",messages:[{role:"user",content:"Hello"}],temperature:.2,topP:.9,maxOutputTokens:120});const [url,init]=fetchMock.mock.calls[0];expect(url).toBe("https://api.openai.com/v1/chat/completions");expect(init?.headers).toMatchObject({Authorization:"Bearer secret"});expect(JSON.parse(String(init?.body))).toMatchObject({model:"model-a",stream:true,max_tokens:120,top_p:.9})})});

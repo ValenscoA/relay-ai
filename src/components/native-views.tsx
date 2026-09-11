@@ -296,6 +296,15 @@ export function SettingsView() {
       toast.success("Local data imported; re-enter provider API keys");
     }
   }
+  async function deleteProvider(id: string) {
+    try {
+      await api.deleteProvider(id);
+      await refresh();
+      toast.success("Provider deleted; conversation history was preserved");
+    } catch (error) {
+      toast.error(String(error));
+    }
+  }
   return (
     <Shell title="Settings" eyebrow="Workspace">
       <div className="mx-auto max-w-4xl space-y-5 p-6">
@@ -353,7 +362,7 @@ export function SettingsView() {
                 </div>
                 <button
                   aria-label={`Delete ${p.name}`}
-                  onClick={() => api.deleteProvider(p.id).then(refresh)}
+                  onClick={() => void deleteProvider(p.id)}
                   className="ml-auto p-2 text-red-400"
                 >
                   <Trash2 size={15} />

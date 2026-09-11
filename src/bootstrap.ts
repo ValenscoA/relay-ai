@@ -10,6 +10,4 @@ function show(error: unknown) {
   }
 }
 
-window.addEventListener("error", (event) => show(event.error ?? event.message));
-window.addEventListener("unhandledrejection", (event) => show(event.reason));
 void import("./main").catch(show);

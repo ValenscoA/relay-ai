@@ -100,10 +100,12 @@ pub fn save_provider(
 
 #[tauri::command]
 pub fn delete_provider(id: String, database: State<'_, Database>) -> Result<(), String> {
+    {
+        let db = database.0.lock().map_err(|_| "Database lock failed")?;
+        db.execute("DELETE FROM providers WHERE id=?", [&id])
+            .map_err(db_error)?;
+    }
     credentials::remove(&id)?;
-    let db = database.0.lock().map_err(|_| "Database lock failed")?;
-    db.execute("DELETE FROM providers WHERE id=?", [id])
-        .map_err(db_error)?;
     Ok(())
 }
 

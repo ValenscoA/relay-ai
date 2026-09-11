@@ -239,7 +239,8 @@ export function SettingsView() {
   const [saving, setSaving] = useState(false);
   async function providerSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const data = new FormData(form);
     setSaving(true);
     try {
       await api.saveProvider({
@@ -249,7 +250,7 @@ export function SettingsView() {
         customHeaders: String(data.get("customHeaders") || "") || undefined,
       });
       await refresh();
-      e.currentTarget.reset();
+      form.reset();
       toast.success("Provider saved securely");
     } catch (error) {
       toast.error(String(error));
@@ -259,7 +260,8 @@ export function SettingsView() {
   }
   async function modelSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const data = new FormData(form);
     try {
       await api.saveModel({
         providerId: String(data.get("providerId")),
@@ -269,7 +271,7 @@ export function SettingsView() {
         outputPricePerMillion: Number(data.get("outputPrice")),
       });
       await refresh();
-      e.currentTarget.reset();
+      form.reset();
       toast.success("Model saved");
     } catch (error) {
       toast.error(String(error));

@@ -76,3 +76,41 @@ pub struct UsageSummary {
     pub estimated_spend: f64,
     pub average_ttft_ms: f64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerationInput {
+    pub request_id: String,
+    pub conversation_id: String,
+    pub model_id: String,
+    pub message: String,
+    pub system_prompt: Option<String>,
+    pub temperature: f64,
+    pub top_p: f64,
+    pub max_output_tokens: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum GenerationEvent {
+    Delta {
+        request_id: String,
+        text: String,
+    },
+    Completed {
+        request_id: String,
+        message_id: String,
+        input_tokens: Option<i64>,
+        output_tokens: Option<i64>,
+        duration_ms: i64,
+        ttft_ms: Option<i64>,
+        estimated_cost: Option<f64>,
+    },
+    Failed {
+        request_id: String,
+        message: String,
+    },
+    Cancelled {
+        request_id: String,
+    },
+}

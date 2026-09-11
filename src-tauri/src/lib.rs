@@ -6,6 +6,9 @@ fn healthcheck() -> &'static str {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(network::Generations(std::sync::Mutex::new(
+            std::collections::HashMap::new(),
+        )))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
@@ -25,7 +28,9 @@ pub fn run() {
             commands::rename_conversation,
             commands::delete_conversation,
             commands::list_messages,
-            commands::usage_summary
+            commands::usage_summary,
+            network::start_generation,
+            network::cancel_generation
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Relay desktop application");
@@ -34,5 +39,6 @@ mod commands;
 mod credentials;
 mod database;
 mod models;
+mod network;
 
 use tauri::Manager;
